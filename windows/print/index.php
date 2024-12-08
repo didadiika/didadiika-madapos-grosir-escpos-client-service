@@ -139,7 +139,7 @@ if(count($data->printers) > 0){
                         $discb_length = strlen($disc);
                         $grand_length = strlen(uang($grand_total));
                         $paid = (int) $data->paid;
-                        $paid = ($paid > 0) ? uang($paid) :'-';
+                        $paid = ($paid > 0) ? '-'.uang($paid) :'-';
                         $paid_length = strlen($paid);
                         $receivable_before = (int)$data->receivable_before;
                         $receivable_before_length = strlen(uang($receivable_before));
@@ -184,7 +184,78 @@ if(count($data->printers) > 0){
 
                     #----------------------------------DELIVERY NOTE-------------------------------------#
                     else if($job->job == 'Delivery Note' && $data->waiting->delivery_note == true){
+                        if($center == 'On')
+                        {
+                            $print -> setJustification(Printer::JUSTIFY_CENTER);
+                        }
+                        $logo = EscposImage::load($image_directory.'/default.png');
+                        $print->bitImage($logo);
+                        $print->selectPrintMode(Printer::MODE_FONT_A);
+                        $print->setEmphasis(true);
+                        $print->text($data->store->header_bill."\n");
+                        $print->text($data->store->address."\n");
+                        $print->text($data->store->city."\n");
+                        $print->text($data->store->phone."\n");
 
+                        $print->selectPrintMode(Printer::MODE_FONT_A | Printer::MODE_DOUBLE_HEIGHT | Printer::MODE_DOUBLE_WIDTH);
+                        $print->feed(1);
+                        $print -> setTextSize(2, 2);
+                        $print -> text("SURAT JALAN\n");
+                        $print -> setTextSize(1, 1);
+                        $print -> text(str_repeat('=',$max_width)."\n");
+                        $print->setEmphasis(true);//berguna mempertebal huruf
+                        $print -> setJustification(Printer::JUSTIFY_LEFT);
+                        $customer_name = ($data->receipt->customer->is_default == true) ? $data->receipt->customer_alias : $data->receipt->customer->name;
+                        $print->text("UID      : ".substr($data->receipt->sale_uid,0,$max_width - 11)."\n");
+                        $print->text("Pelanggan: ".substr($customer_name,0,$max_width - 11)."\n");
+                        $print->text("Tanggal  : ".substr($data->receipt->date,0,$max_width - 11)."\n");
+                        $print->text("Kasir    : ".substr($data->receipt->cashier->name,0,$max_width - 11)."\n");
+
+                        $max_qty = 4;
+                        $space_between_qty_item = 1;
+                        $space_before_note = 6;
+                        $max_item = $max_width - $max_qty - $space_between_qty_item;
+                        $print -> setJustification(Printer::JUSTIFY_LEFT);
+
+                        $print -> text(str_repeat('-', $max_width)."\n");
+                        $print -> text("Qty ".str_repeat(' ',$space_between_qty_item)."Item\n");
+                        $print -> text(str_repeat('-', $max_width)."\n");
+
+                        #CARTS
+                        $q = array();
+                        $no = 0;
+                        foreach($data->carts as $cart){
+                            $no++;
+                                $item = substr(ucwords(strtolower($cart->product->name)),0,$max_width - $max_qty - $space_between_qty_item);#12
+                                $qty = $cart->qty;#1
+                                $note = $cart->note;
+                                
+                                $print -> setJustification(Printer::JUSTIFY_LEFT);
+                                $print -> text(str_repeat(' ',$max_qty - strlen($qty)).$qty.str_repeat(' ',$space_between_qty_item).$item."\n");
+                                if($note){
+                                    $print -> text(str_repeat(' ',$space_before_note)."*".$note."\n");
+                                }
+
+                                $q[] = $cart->qty;#1
+                        }
+                        $qtys = array_sum($q);
+                        $print -> text(str_repeat('-', $max_width)."\n");
+                        $print -> text('TOTAL '.$qtys." QTY(S) ".$no." ITEM(S)\n");
+                        $print -> text(str_repeat('=', $max_width)."\n");
+                        if($center == 'On')
+                        {
+                            $print -> setJustification(Printer::JUSTIFY_CENTER);
+                        }
+                        $print -> text("TERIMA KASIH \n");
+                        $mada_footer = EscposImage::load($image_directory.'/'.$data->app_logo);
+                        $print->bitImage($mada_footer);
+                        if($printer->printer_footer_space > 0){$print -> feed($printer->printer_footer_space); }
+                        if($printer->printer_cutter == "On")
+                        {
+                            $print->cut();#Memotong kertas
+                        }
+                    
+                    
                     }
                     #----------------------------------END DELVERY NOTE-------------------------------------#
 
