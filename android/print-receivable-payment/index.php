@@ -124,7 +124,6 @@ if(count($data->printers) > 0){
                         
                         $print -> text(str_repeat('=', $max_width)."\n");
 
-                        $print->text($data->print_setting->printer_cashier_footer_info."\n");
                         if($center == 'On')
                         {
                             $print -> setJustification(Printer::JUSTIFY_CENTER);
