@@ -56,7 +56,7 @@ if(count($data->printers) > 0){
     }
     #----------Setting Paper-----------#
 
-        $connector = ($printer->printer_conn == 'USB') ? new WindowsPrintConnector($printer->printer_usb_name) : new NetworkPrintConnector($printer->printer_ip_address) ;
+        $connector = ($printer->printer_conn == 'USB') ? new WindowsPrintConnector($printer->printer_address) : new NetworkPrintConnector($printer->printer_address) ;
         if($connector){ #If Connector
             $print = new Printer($connector);#Open Koneksi Printer
             if(count($printer->jobs) > 0){
@@ -66,7 +66,9 @@ if(count($data->printers) > 0){
                     #----------------------------------RECEIPT-------------------------------------#
                     if($job->job == 'Receipt' && $data->waiting->receipt == true){
                         
-
+                        if($data->waiting->push_drawer == true && ($printer->printer_cash_drawer == 1 || $printer->printer_cash_drawer == true)){
+                            $print->pulse(0, 100, 100);
+                        }
                         
 
                         if($center == 'On')
